@@ -1,5 +1,17 @@
 package cosmonic:eventsourcing@0.0.1;
 
+/// Transaction Command Interface
+interface transaction-command {
+    /// Command type specific to transactions
+    resource command;
+    
+    /// Serialize the transaction command to its byte representation.
+    serialize-command: func(command: command) -> result<list<u8>, string>;
+    
+    /// Deserialize the transaction command from its byte representation.
+    deserialize-command: func(command: list<u8>) -> result<command, string>;
+}
+
 /// Transaction State Interface
 interface transaction-state {
     use cosmonic:eventsourcing/shared-types.{event};
@@ -20,16 +32,8 @@ interface transaction-state {
 /// Transaction Command Handler
 interface transaction {
     use cosmonic:eventsourcing/shared-types.{event};
+    use transaction-command.{command};
     use transaction-state.{state};
-    
-    /// Command type specific to transactions
-    resource command;
-    
-    /// Serialize the transaction command to its byte representation.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-    
-    /// Deserialize the transaction command from its byte representation.
-    deserialize-command: func(command: list<u8>) -> result<command, string>;
     
     /// Handle the transaction command
     handle-command: func(state: state, command: command) -> result<list<event>, string>;
@@ -38,6 +42,7 @@ interface transaction {
 /// World specifically for handling transaction commands
 world transaction-w {
     import cosmonic:eventsourcing/shared-types;
+    export transaction-command;
     export transaction-state;
     export transaction;
 } 

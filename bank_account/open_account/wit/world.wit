@@ -1,5 +1,17 @@
 package cosmonic:eventsourcing@0.0.1;
 
+/// Open Account Command Interface
+interface open-account-command {
+    /// Command type specific to opening accounts
+    resource command;
+    
+    /// Serialize the open-account command to its byte representation.
+    serialize-command: func(command: command) -> result<list<u8>, string>;
+    
+    /// Deserialize the open-account command from its byte representation.
+    deserialize-command: func(command: list<u8>) -> result<command, string>;
+}
+
 /// Open Account State Interface
 interface open-account-state {
     use cosmonic:eventsourcing/shared-types.{event};
@@ -20,16 +32,8 @@ interface open-account-state {
 /// Open Account Command Handler
 interface open-account {
     use cosmonic:eventsourcing/shared-types.{event};
+    use open-account-command.{command};
     use open-account-state.{state};
-    
-    /// Command type specific to opening accounts
-    resource command;
-    
-    /// Serialize the open-account command to its byte representation.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-    
-    /// Deserialize the open-account command from its byte representation.
-    deserialize-command: func(command: list<u8>) -> result<command, string>;
     
     /// Handle the open account command
     handle-command: func(state: state, command: command) -> result<list<event>, string>;
@@ -38,6 +42,7 @@ interface open-account {
 /// World specifically for handling open account commands  
 world open-account-w {
     import cosmonic:eventsourcing/shared-types;
+    export open-account-command;
     export open-account-state;
     export open-account;
 }
