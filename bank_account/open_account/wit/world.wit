@@ -17,6 +17,9 @@ interface open-account-state {
     /// State type specific to opening accounts
     resource state;
     
+    /// Get the initial state for a new aggregate with no events
+    initial-state: func() -> state;
+    
     /// Serialize the aggregate state to its byte representation.
     serialize-state: func(state: state) -> result<list<u8>, string>;
     
