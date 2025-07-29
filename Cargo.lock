@@ -57,6 +57,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bank-account-transaction"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "prost 0.14.1",
+ "prost-build",
+ "prost-types 0.14.1",
+ "serde",
+ "serde_json",
+ "uuid",
+ "wasi 0.13.3+wasi-0.2.2",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
