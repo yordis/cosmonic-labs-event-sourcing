@@ -26,7 +26,7 @@ interface open-account-state {
 
 /// Open Account Evolve Interface
 interface open-account-evolve {
-    use cosmonic:eventsourcing/bank-account-shared-types.{event};
+    use cosmonic:eventsourcing/bank-account.{event};
     use open-account-state.{state};
     
     /// Errors that can occur when evolving open account state
@@ -43,7 +43,7 @@ interface open-account-evolve {
 
 /// Open Account Decide Interface
 interface open-account-decide {
-    use cosmonic:eventsourcing/bank-account-shared-types.{event};
+    use cosmonic:eventsourcing/bank-account.{event};
     use open-account-command.{command};
     use open-account-state.{state};
     
@@ -63,7 +63,7 @@ interface open-account-decide {
 
 /// Open Account Command Handler
 interface open-account {
-    use cosmonic:eventsourcing/bank-account-shared-types.{event};
+    use cosmonic:eventsourcing/bank-account.{event};
     use open-account-command.{command};
     use open-account-state.{state};
     use open-account-decide.{decide-error};
@@ -98,7 +98,7 @@ interface open-account {
 
 /// World specifically for handling open account commands  
 world open-account-w {
-    import cosmonic:eventsourcing/bank-account-shared-types;
+    import cosmonic:eventsourcing/bank-account;
     export open-account-command;
     export open-account-state;
     export open-account-evolve;
