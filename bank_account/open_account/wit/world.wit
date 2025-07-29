@@ -1,20 +1,8 @@
 package cosmonic:eventsourcing@0.0.1;
 
-/// Shared types and serialization functions (events only)
-interface shared-types {
-    /// Represents a state change that has occurred as a result of processing a command.
-    resource event;
-    
-    /// Serialize, marshal, or encode a single event to its byte representation.
-    serialize-event: func(event: event) -> result<list<u8>, string>;
-    
-    /// Deserialize, unmarshal, or decode a single event from its byte representation.
-    deserialize-event: func(event: list<u8>) -> result<event, string>;
-}
-
 /// Open Account Command Handler
 interface open-account {
-    use shared-types.{event};
+    use cosmonic:eventsourcing/shared-types.{event};
     
     /// Command type specific to opening accounts
     resource command;
@@ -43,6 +31,6 @@ interface open-account {
 
 /// World specifically for handling open account commands
 world open-account-w {
-    export shared-types;
+    import cosmonic:eventsourcing/shared-types;
     export open-account;
 }

@@ -1,39 +1,8 @@
 package cosmonic:eventsourcing@0.0.1;
 
-/// Shared types and serialization functions
-interface shared-types {
-    /// Represents an action or intent to change state, typically issued by a client.
-    resource command;
-    /// Represents a state change that has occurred as a result of processing a command.
-    resource event;
-    /// Represents the current state of an entity, reconstructed from a sequence of events.
-    resource state;
-    
-    /// Serialize, marshal, or encode a single event to its byte representation.
-    serialize-event: func(event: event) -> result<list<u8>, string>;
-    
-    /// Deserialize, unmarshal, or decode a single event from its byte representation.
-    deserialize-event: func(event: list<u8>) -> result<event, string>;
-    
-    /// Serialize, marshal, or encode a single command to its byte representation.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-    
-    /// Deserialize, unmarshal, or decode a single command from its byte representation.
-    deserialize-command: func(command: list<u8>) -> result<command, string>;
-    
-    /// Serialize, marshal, or encode the aggregate state to its byte representation.
-    serialize-state: func(state: state) -> result<list<u8>, string>;
-    
-    /// Deserialize, unmarshal, or decode the aggregate state from its byte representation.
-    deserialize-state: func(state: list<u8>) -> result<state, string>;
-    
-    /// Rehydrate or reconstruct this aggregate's state from a list of events.
-    rehydrate: func(events: list<event>) -> result<state, string>;
-}
-
 /// Event sourcer interface for handling commands and events
 interface event-sourcer {
-    use shared-types.{event, command};
+    use cosmonic:eventsourcing/shared-types.{event};
 
     append: func(aggregate-id: string, events: list<event>) -> result<list<list<u8>>, string>;
     get-events: func(aggregate-id: string) -> result<list<event>, string>;
@@ -42,7 +11,7 @@ interface event-sourcer {
 
 /// Persistent storage layer
 interface event-store {
-    use shared-types.{event};
+    use cosmonic:eventsourcing/shared-types.{event};
 
     append-event: func(aggregate-id: string, event: list<u8>) -> result<_, string>;
     get-events: func(aggregate-id: string) -> result<list<list<u8>>, string>;
@@ -50,7 +19,8 @@ interface event-store {
 
 /// Business logic component world
 world aggregate-w {
-    export shared-types;
+    import cosmonic:eventsourcing/shared-types;
+    export cosmonic:eventsourcing/shared-types;
 }
 
 /// HTTP API Gateway world
@@ -61,7 +31,7 @@ world http-api-gateway-w {
 
 /// Event sourcer system world
 world event-sourcer-w {
-    import shared-types;
+    import cosmonic:eventsourcing/shared-types;
     import event-store;
     export event-sourcer;
 }
