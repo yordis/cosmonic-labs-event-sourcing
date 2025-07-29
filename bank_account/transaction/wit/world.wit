@@ -14,8 +14,6 @@ interface transaction-command {
 
 /// Transaction State Interface
 interface transaction-state {
-    use cosmonic:eventsourcing/shared-types.{event};
-    
     /// State type specific to transactions
     resource state;
     

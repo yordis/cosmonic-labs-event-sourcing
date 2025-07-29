@@ -14,8 +14,6 @@ interface open-account-command {
 
 /// Open Account State Interface
 interface open-account-state {
-    use cosmonic:eventsourcing/shared-types.{event};
-    
     /// State type specific to opening accounts
     resource state;
     
