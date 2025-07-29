@@ -1,20 +1,11 @@
 package cosmonic:eventsourcing@0.0.1;
 
-/// Transaction Command Handler
-interface transaction {
+/// Transaction State Interface
+interface transaction-state {
     use cosmonic:eventsourcing/shared-types.{event};
-    
-    /// Command type specific to transactions
-    resource command;
     
     /// State type specific to transactions
     resource state;
-    
-    /// Serialize the transaction command to its byte representation.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-    
-    /// Deserialize the transaction command from its byte representation.
-    deserialize-command: func(command: list<u8>) -> result<command, string>;
     
     /// Serialize the aggregate state to its byte representation.
     serialize-state: func(state: state) -> result<list<u8>, string>;
@@ -24,13 +15,29 @@ interface transaction {
     
     /// Rehydrate or reconstruct this aggregate's state from a list of events.
     rehydrate: func(events: list<event>) -> result<state, string>;
+}
+
+/// Transaction Command Handler
+interface transaction {
+    use cosmonic:eventsourcing/shared-types.{event};
+    use transaction-state.{state};
+    
+    /// Command type specific to transactions
+    resource command;
+    
+    /// Serialize the transaction command to its byte representation.
+    serialize-command: func(command: command) -> result<list<u8>, string>;
+    
+    /// Deserialize the transaction command from its byte representation.
+    deserialize-command: func(command: list<u8>) -> result<command, string>;
     
     /// Handle the transaction command
-    handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
+    handle-command: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// World specifically for handling transaction commands
 world transaction-w {
     import cosmonic:eventsourcing/shared-types;
+    export transaction-state;
     export transaction;
 } 
