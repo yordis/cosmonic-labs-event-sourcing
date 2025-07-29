@@ -25,8 +25,8 @@ interface open-account-state {
     /// Deserialize the aggregate state from its byte representation.
     deserialize-state: func(state: list<u8>) -> result<state, string>;
     
-    /// Rehydrate or reconstruct this aggregate's state from a list of events.
-    rehydrate: func(events: list<event>) -> result<state, string>;
+    /// Evolve the state by applying a single event.
+    evolve: func(state: state, event: event) -> state;
 }
 
 /// Open Account Command Handler
