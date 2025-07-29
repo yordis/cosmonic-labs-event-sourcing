@@ -1,13 +1,13 @@
-/// Generated WIT bindings for aggregate (legacy/compatibility)
+/// Generated WIT bindings for open-account command
 mod bindings {
-    use super::Aggregate;
+    use super::OpenAccountAggregate;
 
     wit_bindgen::generate!({
         path: "./wit",
-        world: "aggregate-w",
+        world: "open-account-w",
     });
 
-    export!(Aggregate);
+    export!(OpenAccountAggregate);
 }
 
 pub mod proto {
@@ -16,9 +16,15 @@ pub mod proto {
 
 use prost::Message;
 use proto::{
-    bank_command, bank_event, AccountOpened, BankCommand, BankEvent, BankState, Transaction,
+    bank_event, AccountOpened, BankEvent, BankState, Transaction,
     TransactionDenied,
 };
+
+/// Open Account Command - specific to this handler
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OpenAccountCommand {
+    pub initial_balance: u32,
+}
 
 impl From<BankEvent> for shared_types::Event {
     fn from(value: BankEvent) -> Self {
@@ -35,19 +41,19 @@ impl From<BankState> for shared_types::State {
         shared_types::State::new(value)
     }
 }
-impl From<BankCommand> for aggregate::Command {
-    fn from(value: BankCommand) -> Self {
-        aggregate::Command::new(value)
+impl From<OpenAccountCommand> for open_account::Command {
+    fn from(value: OpenAccountCommand) -> Self {
+        open_account::Command::new(value)
     }
 }
 
-pub struct Aggregate;
+pub struct OpenAccountAggregate;
 
 use bindings::exports::cosmonic::eventsourcing::*;
 
 impl shared_types::GuestEvent for BankEvent {}
 impl shared_types::GuestState for BankState {}
-impl shared_types::Guest for Aggregate {
+impl shared_types::Guest for OpenAccountAggregate {
     type Event = BankEvent;
     type State = BankState;
 
@@ -104,54 +110,40 @@ impl shared_types::Guest for Aggregate {
     }
 }
 
-impl aggregate::GuestCommand for BankCommand {}
-impl aggregate::Guest for Aggregate {
-    type Command = BankCommand;
+impl open_account::GuestCommand for OpenAccountCommand {}
+impl open_account::Guest for OpenAccountAggregate {
+    type Command = OpenAccountCommand;
 
     fn serialize_command(
-        command: aggregate::Command,
+        command: open_account::Command,
     ) -> Result<Vec<u8>, String> {
-        Ok(command.into_inner::<BankCommand>().encode_to_vec())
+        let cmd = command.into_inner::<OpenAccountCommand>();
+        // Simple JSON serialization for this specific command
+        serde_json::to_vec(&cmd).map_err(|e| format!("Command serialization failed: {e}"))
     }
 
     fn deserialize_command(
         command: Vec<u8>,
-    ) -> Result<aggregate::Command, String> {
-        Ok(BankCommand::decode(command.as_slice())
-            .map_err(|e| format!("Command deserialization failed: {e}"))?
-            .into())
+    ) -> Result<open_account::Command, String> {
+        let cmd: OpenAccountCommand = serde_json::from_slice(&command)
+            .map_err(|e| format!("Command deserialization failed: {e}"))?;
+        Ok(cmd.into())
     }
 
-    fn handle(
+    fn handle_open_account(
         state: shared_types::State,
-        command: aggregate::Command,
+        command: open_account::Command,
     ) -> Result<Vec<shared_types::Event>, String> {
         let bank_state: &BankState = state.get();
-        let bank_command = command.into_inner::<BankCommand>();
-        match bank_command.command {
-            Some(bank_command::Command::Transaction(amount)) => {
-                if bank_state.balance.saturating_sub(amount) < 0 {
-                    Ok(vec![bank_event::Event::Denied(TransactionDenied {
-                        amount,
-                    })
-                    .into()])
-                } else {
-                    Ok(vec![
-                        bank_event::Event::Transaction(Transaction { amount }).into()
-                    ])
-                }
-            }
-            Some(bank_command::Command::OpenAccount(initial_balance)) => {
-                if bank_state.is_open {
-                    return Err("Account is already open".to_string());
-                }
-                Ok(vec![bank_event::Event::Opened(AccountOpened {
-                    balance: initial_balance,
-                    id: uuid::Uuid::now_v7().to_string(),
-                })
-                .into()])
-            }
-            None => Ok(vec![]),
+        if bank_state.is_open {
+            return Err("Account is already open".to_string());
         }
+
+        let cmd = command.into_inner::<OpenAccountCommand>();
+        Ok(vec![bank_event::Event::Opened(AccountOpened {
+            balance: cmd.initial_balance,
+            id: uuid::Uuid::now_v7().to_string(),
+        })
+        .into()])
     }
 }

@@ -40,54 +40,8 @@ interface open-account {
     handle-open-account: func(state: state, command: command) -> result<list<event>, string>;
 }
 
-/// Transaction Command Handler
-interface transaction {
-    use shared-types.{event, state};
-    
-    /// Command type specific to transactions
-    resource command;
-    
-    /// Serialize the transaction command to its byte representation.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-    
-    /// Deserialize the transaction command from its byte representation.
-    deserialize-command: func(command: list<u8>) -> result<command, string>;
-    
-    /// Handle the transaction command
-    handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
-}
-
-/// Business logic aggregate interface (legacy/compatibility)
-interface aggregate {
-    use shared-types.{event, state};
-    
-    /// Generic command resource for backwards compatibility
-    resource command;
-    
-    /// Serialize the aggregate command to its byte representation.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-    
-    /// Deserialize the aggregate command from its byte representation.
-    deserialize-command: func(command: list<u8>) -> result<command, string>;
-    
-    /// Handle commands and return applicable events (legacy)
-    handle: func(state: state, command: command) -> result<list<event>, string>;
-}
-
 /// World specifically for handling open account commands
 world open-account-w {
     export shared-types;
     export open-account;
-}
-
-/// World specifically for handling transaction commands
-world transaction-w {
-    export shared-types;
-    export transaction;
-}
-
-/// Aggregate world that exports all interfaces (legacy/compatibility)
-world aggregate-w {
-    export shared-types;
-    export aggregate;
 }
