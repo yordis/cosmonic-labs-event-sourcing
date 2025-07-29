@@ -47,8 +47,28 @@ interface open-account {
         state: state,
     }
     
+    /// Errors that can occur when deciding on open account commands
+    variant decide-error {
+        account-already-exists,
+        invalid-account-number(string),
+        invalid-initial-balance,
+        missing-customer-info,
+        regulatory-restriction(string),
+        minimum-balance-not-met(u64),
+    }
+    
+    /// Errors that can occur when handling open account commands
+    variant handle-command-error {
+        decide(decide-error),
+        wrong-expected-version,
+        unknown,
+    }
+    
+    /// Decide what events to produce based on current state and command
+    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
+    
     /// Handle the open account command
-    handle-command: func(command: command, option: command-option) -> result<command-result, string>;
+    handle-command: func(command: command, option: command-option) -> result<command-result, handle-command-error>;
 }
 
 /// World specifically for handling open account commands  

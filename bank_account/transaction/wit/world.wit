@@ -47,8 +47,28 @@ interface transaction {
         state: state,
     }
     
+    /// Errors that can occur when deciding on transaction commands
+    variant decide-error {
+        insufficient-funds(string),
+        account-not-found,
+        account-closed,
+        invalid-amount,
+        negative-balance-not-allowed,
+        transaction-limit-exceeded(u64),
+    }
+    
+    /// Errors that can occur when handling transaction commands
+    variant handle-command-error {
+        decide(decide-error),
+        wrong-expected-version,
+        unknown,
+    }
+    
+    /// Decide what events to produce based on current state and command
+    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
+    
     /// Handle the transaction command
-    handle-command: func(command: command, option: command-option) -> result<command-result, string>;
+    handle-command: func(command: command, option: command-option) -> result<command-result, handle-command-error>;
 }
 
 /// World specifically for handling transaction commands
