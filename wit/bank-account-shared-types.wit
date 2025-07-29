@@ -1,7 +1,7 @@
 package cosmonic:eventsourcing@0.0.1;
 
-/// Shared types and serialization functions
-interface shared-types {
+/// Bank account shared types and serialization functions
+interface bank-account-shared-types {
     /// Represents a state change that has occurred as a result of processing a command.
     resource event;
     

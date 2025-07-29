@@ -2,7 +2,7 @@ package cosmonic:eventsourcing@0.0.1;
 
 /// Event sourcer interface for handling commands and events
 interface event-sourcer {
-    use cosmonic:eventsourcing/shared-types.{event};
+    use cosmonic:eventsourcing/bank-account-shared-types.{event};
 
     append: func(aggregate-id: string, events: list<event>) -> result<list<list<u8>>, string>;
     get-events: func(aggregate-id: string) -> result<list<event>, string>;
@@ -11,7 +11,7 @@ interface event-sourcer {
 
 /// Persistent storage layer
 interface event-store {
-    use cosmonic:eventsourcing/shared-types.{event};
+    use cosmonic:eventsourcing/bank-account-shared-types.{event};
 
     append-event: func(aggregate-id: string, event: list<u8>) -> result<_, string>;
     get-events: func(aggregate-id: string) -> result<list<list<u8>>, string>;
@@ -19,8 +19,8 @@ interface event-store {
 
 /// Business logic component world
 world aggregate-w {
-    import cosmonic:eventsourcing/shared-types;
-    export cosmonic:eventsourcing/shared-types;
+    import cosmonic:eventsourcing/bank-account-shared-types;
+    export cosmonic:eventsourcing/bank-account-shared-types;
 }
 
 /// HTTP API Gateway world
@@ -31,7 +31,7 @@ world http-api-gateway-w {
 
 /// Event sourcer system world
 world event-sourcer-w {
-    import cosmonic:eventsourcing/shared-types;
+    import cosmonic:eventsourcing/bank-account-shared-types;
     import event-store;
     export event-sourcer;
 }

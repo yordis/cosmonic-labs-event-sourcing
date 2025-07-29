@@ -26,7 +26,7 @@ interface transaction-state {
 
 /// Transaction Evolve Interface
 interface transaction-evolve {
-    use cosmonic:eventsourcing/shared-types.{event};
+    use cosmonic:eventsourcing/bank-account-shared-types.{event};
     use transaction-state.{state};
     
     /// Errors that can occur when evolving transaction state
@@ -43,7 +43,7 @@ interface transaction-evolve {
 
 /// Transaction Decide Interface
 interface transaction-decide {
-    use cosmonic:eventsourcing/shared-types.{event};
+    use cosmonic:eventsourcing/bank-account-shared-types.{event};
     use transaction-command.{command};
     use transaction-state.{state};
     
@@ -63,7 +63,7 @@ interface transaction-decide {
 
 /// Transaction Command Handler
 interface transaction {
-    use cosmonic:eventsourcing/shared-types.{event};
+    use cosmonic:eventsourcing/bank-account-shared-types.{event};
     use transaction-command.{command};
     use transaction-state.{state};
     use transaction-decide.{decide-error};
@@ -98,7 +98,7 @@ interface transaction {
 
 /// World specifically for handling transaction commands
 world transaction-w {
-    import cosmonic:eventsourcing/shared-types;
+    import cosmonic:eventsourcing/bank-account-shared-types;
     export transaction-command;
     export transaction-state;
     export transaction-evolve;
