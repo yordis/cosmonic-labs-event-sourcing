@@ -24,9 +24,43 @@ interface transaction-state {
     
     /// Deserialize the aggregate state from its byte representation.
     deserialize-state: func(state: list<u8>) -> result<state, string>;
+}
+
+/// Transaction Evolve Interface
+interface transaction-evolve {
+    use cosmonic:eventsourcing/shared-types.{event};
+    use transaction-state.{state};
+    
+    /// Errors that can occur when evolving transaction state
+    variant evolve-error {
+        invalid-event,
+        inconsistent-state,
+        unknown-event-type,
+        state-corruption,
+    }
     
     /// Evolve the state by applying a single event.
-    evolve: func(state: state, event: event) -> state;
+    evolve: func(state: state, event: event) -> result<state, evolve-error>;
+}
+
+/// Transaction Decide Interface
+interface transaction-decide {
+    use cosmonic:eventsourcing/shared-types.{event};
+    use transaction-command.{command};
+    use transaction-state.{state};
+    
+    /// Errors that can occur when deciding on transaction commands
+    variant decide-error {
+        insufficient-funds(string),
+        account-not-found,
+        account-closed,
+        invalid-amount,
+        negative-balance-not-allowed,
+        transaction-limit-exceeded(u64),
+    }
+    
+    /// Decide what events to produce based on current state and command
+    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
 }
 
 /// Transaction Command Handler
@@ -34,6 +68,8 @@ interface transaction {
     use cosmonic:eventsourcing/shared-types.{event};
     use transaction-command.{command};
     use transaction-state.{state};
+    use transaction-decide.{decide-error};
+    use transaction-evolve.{evolve-error};
     
     /// Command handling option
     record command-option {
@@ -47,25 +83,13 @@ interface transaction {
         state: state,
     }
     
-    /// Errors that can occur when deciding on transaction commands
-    variant decide-error {
-        insufficient-funds(string),
-        account-not-found,
-        account-closed,
-        invalid-amount,
-        negative-balance-not-allowed,
-        transaction-limit-exceeded(u64),
-    }
-    
     /// Errors that can occur when handling transaction commands
     variant handle-command-error {
         decide(decide-error),
+        evolve(evolve-error),
         wrong-expected-version,
         unknown,
     }
-    
-    /// Decide what events to produce based on current state and command
-    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
     
     /// Handle the transaction command
     handle-command: func(command: command, option: command-option) -> result<command-result, handle-command-error>;
@@ -76,5 +100,7 @@ world transaction-w {
     import cosmonic:eventsourcing/shared-types;
     export transaction-command;
     export transaction-state;
+    export transaction-evolve;
+    export transaction-decide;
     export transaction;
 } 

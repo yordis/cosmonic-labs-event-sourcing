@@ -24,9 +24,43 @@ interface open-account-state {
     
     /// Deserialize the aggregate state from its byte representation.
     deserialize-state: func(state: list<u8>) -> result<state, string>;
+}
+
+/// Open Account Evolve Interface
+interface open-account-evolve {
+    use cosmonic:eventsourcing/shared-types.{event};
+    use open-account-state.{state};
+    
+    /// Errors that can occur when evolving open account state
+    variant evolve-error {
+        invalid-event,
+        inconsistent-state,
+        unknown-event-type,
+        state-corruption,
+    }
     
     /// Evolve the state by applying a single event.
-    evolve: func(state: state, event: event) -> state;
+    evolve: func(state: state, event: event) -> result<state, evolve-error>;
+}
+
+/// Open Account Decide Interface
+interface open-account-decide {
+    use cosmonic:eventsourcing/shared-types.{event};
+    use open-account-command.{command};
+    use open-account-state.{state};
+    
+    /// Errors that can occur when deciding on open account commands
+    variant decide-error {
+        account-already-exists,
+        invalid-account-number(string),
+        invalid-initial-balance,
+        missing-customer-info,
+        regulatory-restriction(string),
+        minimum-balance-not-met(u64),
+    }
+    
+    /// Decide what events to produce based on current state and command
+    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
 }
 
 /// Open Account Command Handler
@@ -34,6 +68,8 @@ interface open-account {
     use cosmonic:eventsourcing/shared-types.{event};
     use open-account-command.{command};
     use open-account-state.{state};
+    use open-account-decide.{decide-error};
+    use open-account-evolve.{evolve-error};
     
     /// Command handling option
     record command-option {
@@ -47,25 +83,13 @@ interface open-account {
         state: state,
     }
     
-    /// Errors that can occur when deciding on open account commands
-    variant decide-error {
-        account-already-exists,
-        invalid-account-number(string),
-        invalid-initial-balance,
-        missing-customer-info,
-        regulatory-restriction(string),
-        minimum-balance-not-met(u64),
-    }
-    
     /// Errors that can occur when handling open account commands
     variant handle-command-error {
         decide(decide-error),
+        evolve(evolve-error),
         wrong-expected-version,
         unknown,
     }
-    
-    /// Decide what events to produce based on current state and command
-    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
     
     /// Handle the open account command
     handle-command: func(command: command, option: command-option) -> result<command-result, handle-command-error>;
@@ -76,5 +100,7 @@ world open-account-w {
     import cosmonic:eventsourcing/shared-types;
     export open-account-command;
     export open-account-state;
+    export open-account-evolve;
+    export open-account-decide;
     export open-account;
 }
