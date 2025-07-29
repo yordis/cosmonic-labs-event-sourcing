@@ -1,34 +1,26 @@
 package cosmonic:eventsourcing@0.0.1;
 
-/// Shared types and serialization functions (events and state only)
+/// Shared types and serialization functions (events only)
 interface shared-types {
     /// Represents a state change that has occurred as a result of processing a command.
     resource event;
-    /// Represents the current state of an entity, reconstructed from a sequence of events.
-    resource state;
     
     /// Serialize, marshal, or encode a single event to its byte representation.
     serialize-event: func(event: event) -> result<list<u8>, string>;
     
     /// Deserialize, unmarshal, or decode a single event from its byte representation.
     deserialize-event: func(event: list<u8>) -> result<event, string>;
-    
-    /// Serialize, marshal, or encode the aggregate state to its byte representation.
-    serialize-state: func(state: state) -> result<list<u8>, string>;
-    
-    /// Deserialize, unmarshal, or decode the aggregate state from its byte representation.
-    deserialize-state: func(state: list<u8>) -> result<state, string>;
-    
-    /// Rehydrate or reconstruct this aggregate's state from a list of events.
-    rehydrate: func(events: list<event>) -> result<state, string>;
 }
 
 /// Open Account Command Handler
 interface open-account {
-    use shared-types.{event, state};
+    use shared-types.{event};
     
     /// Command type specific to opening accounts
     resource command;
+    
+    /// State type specific to opening accounts
+    resource state;
     
     /// Serialize the open-account command to its byte representation.
     serialize-command: func(command: command) -> result<list<u8>, string>;
@@ -36,16 +28,28 @@ interface open-account {
     /// Deserialize the open-account command from its byte representation.
     deserialize-command: func(command: list<u8>) -> result<command, string>;
     
+    /// Serialize the aggregate state to its byte representation.
+    serialize-state: func(state: state) -> result<list<u8>, string>;
+    
+    /// Deserialize the aggregate state from its byte representation.
+    deserialize-state: func(state: list<u8>) -> result<state, string>;
+    
+    /// Rehydrate or reconstruct this aggregate's state from a list of events.
+    rehydrate: func(events: list<event>) -> result<state, string>;
+    
     /// Handle the open account command
     handle-open-account: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// Transaction Command Handler
 interface transaction {
-    use shared-types.{event, state};
+    use shared-types.{event};
     
     /// Command type specific to transactions
     resource command;
+    
+    /// State type specific to transactions
+    resource state;
     
     /// Serialize the transaction command to its byte representation.
     serialize-command: func(command: command) -> result<list<u8>, string>;
@@ -53,22 +57,43 @@ interface transaction {
     /// Deserialize the transaction command from its byte representation.
     deserialize-command: func(command: list<u8>) -> result<command, string>;
     
+    /// Serialize the aggregate state to its byte representation.
+    serialize-state: func(state: state) -> result<list<u8>, string>;
+    
+    /// Deserialize the aggregate state from its byte representation.
+    deserialize-state: func(state: list<u8>) -> result<state, string>;
+    
+    /// Rehydrate or reconstruct this aggregate's state from a list of events.
+    rehydrate: func(events: list<event>) -> result<state, string>;
+    
     /// Handle the transaction command
     handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// Business logic aggregate interface (legacy/compatibility)
 interface aggregate {
-    use shared-types.{event, state};
+    use shared-types.{event};
     
     /// Generic command resource for backwards compatibility
     resource command;
+    
+    /// Generic state resource for backwards compatibility
+    resource state;
     
     /// Serialize the aggregate command to its byte representation.
     serialize-command: func(command: command) -> result<list<u8>, string>;
     
     /// Deserialize the aggregate command from its byte representation.
     deserialize-command: func(command: list<u8>) -> result<command, string>;
+    
+    /// Serialize the aggregate state to its byte representation.
+    serialize-state: func(state: state) -> result<list<u8>, string>;
+    
+    /// Deserialize the aggregate state from its byte representation.
+    deserialize-state: func(state: list<u8>) -> result<state, string>;
+    
+    /// Rehydrate or reconstruct this aggregate's state from a list of events.
+    rehydrate: func(events: list<event>) -> result<state, string>;
     
     /// Handle commands and return applicable events (legacy)
     handle: func(state: state, command: command) -> result<list<event>, string>;

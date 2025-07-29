@@ -30,9 +30,9 @@ impl From<bank_event::Event> for shared_types::Event {
         shared_types::Event::new(BankEvent { event: Some(value) })
     }
 }
-impl From<BankState> for shared_types::State {
+impl From<BankState> for aggregate::State {
     fn from(value: BankState) -> Self {
-        shared_types::State::new(value)
+        aggregate::State::new(value)
     }
 }
 impl From<BankCommand> for aggregate::Command {
@@ -46,10 +46,8 @@ pub struct Aggregate;
 use bindings::exports::cosmonic::eventsourcing::*;
 
 impl shared_types::GuestEvent for BankEvent {}
-impl shared_types::GuestState for BankState {}
 impl shared_types::Guest for Aggregate {
     type Event = BankEvent;
-    type State = BankState;
 
     fn serialize_event(event: shared_types::Event) -> Result<Vec<u8>, String> {
         Ok(event.into_inner::<BankEvent>().encode_to_vec())
@@ -60,8 +58,29 @@ impl shared_types::Guest for Aggregate {
             .map_err(|e| format!("Event deserialization failed: {e}"))?
             .into())
     }
+}
 
-    fn serialize_state(state: shared_types::State) -> Result<Vec<u8>, String> {
+impl aggregate::GuestCommand for BankCommand {}
+impl aggregate::GuestState for BankState {}
+impl aggregate::Guest for Aggregate {
+    type Command = BankCommand;
+    type State = BankState;
+
+    fn serialize_command(
+        command: aggregate::Command,
+    ) -> Result<Vec<u8>, String> {
+        Ok(command.into_inner::<BankCommand>().encode_to_vec())
+    }
+
+    fn deserialize_command(
+        command: Vec<u8>,
+    ) -> Result<aggregate::Command, String> {
+        Ok(BankCommand::decode(command.as_slice())
+            .map_err(|e| format!("Command deserialization failed: {e}"))?
+            .into())
+    }
+
+    fn serialize_state(state: aggregate::State) -> Result<Vec<u8>, String> {
         let bank_state = state.into_inner::<BankState>();
         let proto_state = proto::BankState {
             balance: bank_state.balance,
@@ -71,7 +90,7 @@ impl shared_types::Guest for Aggregate {
         Ok(proto_state.encode_to_vec())
     }
 
-    fn deserialize_state(state: Vec<u8>) -> Result<shared_types::State, String> {
+    fn deserialize_state(state: Vec<u8>) -> Result<aggregate::State, String> {
         let proto_state = proto::BankState::decode(state.as_slice())
             .map_err(|e| format!("State deserialization failed: {e}"))?;
         let bank_state = BankState {
@@ -79,10 +98,10 @@ impl shared_types::Guest for Aggregate {
             id: proto_state.id,
             is_open: proto_state.is_open,
         };
-        Ok(shared_types::State::new(bank_state))
+        Ok(aggregate::State::new(bank_state))
     }
 
-    fn rehydrate(events: Vec<shared_types::Event>) -> Result<shared_types::State, String> {
+    fn rehydrate(events: Vec<shared_types::Event>) -> Result<aggregate::State, String> {
         let mut state = BankState::default();
         for e in events {
             match e.get::<BankEvent>().event.as_ref() {
@@ -102,28 +121,9 @@ impl shared_types::Guest for Aggregate {
         }
         Ok(state.into())
     }
-}
-
-impl aggregate::GuestCommand for BankCommand {}
-impl aggregate::Guest for Aggregate {
-    type Command = BankCommand;
-
-    fn serialize_command(
-        command: aggregate::Command,
-    ) -> Result<Vec<u8>, String> {
-        Ok(command.into_inner::<BankCommand>().encode_to_vec())
-    }
-
-    fn deserialize_command(
-        command: Vec<u8>,
-    ) -> Result<aggregate::Command, String> {
-        Ok(BankCommand::decode(command.as_slice())
-            .map_err(|e| format!("Command deserialization failed: {e}"))?
-            .into())
-    }
 
     fn handle(
-        state: shared_types::State,
+        state: aggregate::State,
         command: aggregate::Command,
     ) -> Result<Vec<shared_types::Event>, String> {
         let bank_state: &BankState = state.get();

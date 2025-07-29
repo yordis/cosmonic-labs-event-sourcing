@@ -36,9 +36,9 @@ impl From<bank_event::Event> for shared_types::Event {
         shared_types::Event::new(BankEvent { event: Some(value) })
     }
 }
-impl From<BankState> for shared_types::State {
+impl From<BankState> for open_account::State {
     fn from(value: BankState) -> Self {
-        shared_types::State::new(value)
+        open_account::State::new(value)
     }
 }
 impl From<OpenAccountCommand> for open_account::Command {
@@ -52,10 +52,8 @@ pub struct OpenAccountAggregate;
 use bindings::exports::cosmonic::eventsourcing::*;
 
 impl shared_types::GuestEvent for BankEvent {}
-impl shared_types::GuestState for BankState {}
 impl shared_types::Guest for OpenAccountAggregate {
     type Event = BankEvent;
-    type State = BankState;
 
     fn serialize_event(event: shared_types::Event) -> Result<Vec<u8>, String> {
         Ok(event.into_inner::<BankEvent>().encode_to_vec())
@@ -66,8 +64,31 @@ impl shared_types::Guest for OpenAccountAggregate {
             .map_err(|e| format!("Event deserialization failed: {e}"))?
             .into())
     }
+}
 
-    fn serialize_state(state: shared_types::State) -> Result<Vec<u8>, String> {
+impl open_account::GuestCommand for OpenAccountCommand {}
+impl open_account::GuestState for BankState {}
+impl open_account::Guest for OpenAccountAggregate {
+    type Command = OpenAccountCommand;
+    type State = BankState;
+
+    fn serialize_command(
+        command: open_account::Command,
+    ) -> Result<Vec<u8>, String> {
+        let cmd = command.into_inner::<OpenAccountCommand>();
+        // Simple JSON serialization for this specific command
+        serde_json::to_vec(&cmd).map_err(|e| format!("Command serialization failed: {e}"))
+    }
+
+    fn deserialize_command(
+        command: Vec<u8>,
+    ) -> Result<open_account::Command, String> {
+        let cmd: OpenAccountCommand = serde_json::from_slice(&command)
+            .map_err(|e| format!("Command deserialization failed: {e}"))?;
+        Ok(cmd.into())
+    }
+
+    fn serialize_state(state: open_account::State) -> Result<Vec<u8>, String> {
         let bank_state = state.into_inner::<BankState>();
         let proto_state = proto::BankState {
             balance: bank_state.balance,
@@ -77,7 +98,7 @@ impl shared_types::Guest for OpenAccountAggregate {
         Ok(proto_state.encode_to_vec())
     }
 
-    fn deserialize_state(state: Vec<u8>) -> Result<shared_types::State, String> {
+    fn deserialize_state(state: Vec<u8>) -> Result<open_account::State, String> {
         let proto_state = proto::BankState::decode(state.as_slice())
             .map_err(|e| format!("State deserialization failed: {e}"))?;
         let bank_state = BankState {
@@ -85,10 +106,10 @@ impl shared_types::Guest for OpenAccountAggregate {
             id: proto_state.id,
             is_open: proto_state.is_open,
         };
-        Ok(shared_types::State::new(bank_state))
+        Ok(open_account::State::new(bank_state))
     }
 
-    fn rehydrate(events: Vec<shared_types::Event>) -> Result<shared_types::State, String> {
+    fn rehydrate(events: Vec<shared_types::Event>) -> Result<open_account::State, String> {
         let mut state = BankState::default();
         for e in events {
             match e.get::<BankEvent>().event.as_ref() {
@@ -108,30 +129,9 @@ impl shared_types::Guest for OpenAccountAggregate {
         }
         Ok(state.into())
     }
-}
-
-impl open_account::GuestCommand for OpenAccountCommand {}
-impl open_account::Guest for OpenAccountAggregate {
-    type Command = OpenAccountCommand;
-
-    fn serialize_command(
-        command: open_account::Command,
-    ) -> Result<Vec<u8>, String> {
-        let cmd = command.into_inner::<OpenAccountCommand>();
-        // Simple JSON serialization for this specific command
-        serde_json::to_vec(&cmd).map_err(|e| format!("Command serialization failed: {e}"))
-    }
-
-    fn deserialize_command(
-        command: Vec<u8>,
-    ) -> Result<open_account::Command, String> {
-        let cmd: OpenAccountCommand = serde_json::from_slice(&command)
-            .map_err(|e| format!("Command deserialization failed: {e}"))?;
-        Ok(cmd.into())
-    }
 
     fn handle_open_account(
-        state: shared_types::State,
+        state: open_account::State,
         command: open_account::Command,
     ) -> Result<Vec<shared_types::Event>, String> {
         let bank_state: &BankState = state.get();
