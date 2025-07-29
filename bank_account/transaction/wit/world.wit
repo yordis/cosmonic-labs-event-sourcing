@@ -89,8 +89,11 @@ interface transaction {
         unknown,
     }
     
+    /// Extract the stream ID from the transaction command
+    stream-id: func(command: command) -> string;
+    
     /// Handle the transaction command
-    handle-command: func(command: command, option: command-option) -> result<command-result, handle-command-error>;
+    handle-command: func(command: command, option: option<command-option>) -> result<command-result, handle-command-error>;
 }
 
 /// World specifically for handling transaction commands

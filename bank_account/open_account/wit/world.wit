@@ -89,8 +89,11 @@ interface open-account {
         unknown,
     }
     
+    /// Extract the stream ID from the open account command
+    stream-id: func(command: command) -> string;
+    
     /// Handle the open account command
-    handle-command: func(command: command, option: command-option) -> result<command-result, handle-command-error>;
+    handle-command: func(command: command, option: option<command-option>) -> result<command-result, handle-command-error>;
 }
 
 /// World specifically for handling open account commands  
