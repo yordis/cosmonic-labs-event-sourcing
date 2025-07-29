@@ -35,8 +35,20 @@ interface open-account {
     use open-account-command.{command};
     use open-account-state.{state};
     
+    /// Command handling option
+    record command-option {
+        expected-revision: option<u64>,
+    }
+    
+    /// Result of handling an open account command
+    record command-result {
+        next-expected-version: u64,
+        events: list<event>,
+        state: state,
+    }
+    
     /// Handle the open account command
-    handle-command: func(state: state, command: command) -> result<list<event>, string>;
+    handle-command: func(command: command, option: command-option) -> result<command-result, string>;
 }
 
 /// World specifically for handling open account commands  

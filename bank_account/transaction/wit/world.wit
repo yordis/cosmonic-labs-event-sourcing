@@ -35,8 +35,20 @@ interface transaction {
     use transaction-command.{command};
     use transaction-state.{state};
     
+    /// Command handling option
+    record command-option {
+        expected-revision: option<u64>,
+    }
+    
+    /// Result of handling a transaction command
+    record command-result {
+        next-expected-version: u64,
+        events: list<event>,
+        state: state,
+    }
+    
     /// Handle the transaction command
-    handle-command: func(state: state, command: command) -> result<list<event>, string>;
+    handle-command: func(command: command, option: command-option) -> result<command-result, string>;
 }
 
 /// World specifically for handling transaction commands
