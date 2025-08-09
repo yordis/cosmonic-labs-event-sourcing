@@ -1,0 +1,67 @@
+package cosmonic:eventsourcing@0.0.1;
+
+/// Transaction Command Interface
+interface transaction-command {
+    /// Command type specific to transactions
+    record command {
+        /// Account ID to perform transaction on
+        account-id: string,
+        /// Transaction amount (positive for credit, negative for debit)
+        amount: s64,
+        /// Optional transaction description
+        description: option<string>,
+    }
+    
+    /// Serialize the transaction command to its byte representation.
+    serialize-command: func(command: command) -> result<list<u8>, string>;
+    
+    /// Deserialize the transaction command from its byte representation.
+    deserialize-command: func(command: list<u8>) -> result<command, string>;
+}
+
+/// Transaction State Interface
+interface transaction-state {
+    /// State type specific to transactions
+    record state {
+        /// Account ID
+        id: string,
+        /// Current balance
+        balance: s64,
+        /// Whether the account is open
+        is-open: bool,
+        /// Customer ID
+        customer-id: string,
+        /// Account type
+        account-type: option<string>,
+    }
+    
+    /// Get the initial state for a new aggregate with no events
+    initial-state: func() -> state;
+    
+    /// Serialize the aggregate state to its byte representation.
+    serialize-state: func(state: state) -> result<list<u8>, string>;
+    
+    /// Deserialize the aggregate state from its byte representation.
+    deserialize-state: func(state: list<u8>) -> result<state, string>;
+}
+
+/// Transaction Handler Interface
+interface transaction {
+    use bank-account.{event};
+    use transaction-command.{command};
+    use transaction-state.{state};
+    
+    /// Rehydrate or reconstruct this aggregate's state from a list of events.
+    rehydrate: func(events: list<event>) -> result<state, string>;
+    
+    /// Handle the transaction command
+    handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
+}
+
+/// World specifically for handling transaction commands
+world transaction-w {
+    import bank-account;
+    export transaction-command;
+    export transaction-state;
+    export transaction;
+}

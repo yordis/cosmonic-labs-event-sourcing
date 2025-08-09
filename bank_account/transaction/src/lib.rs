@@ -3,7 +3,7 @@ mod bindings {
     use super::TransactionAggregate;
 
     wit_bindgen::generate!({
-        path: "./wit",
+        path: "../../wit",
         world: "transaction-w",
     });
 
