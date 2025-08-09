@@ -3,7 +3,14 @@ package cosmonic:eventsourcing@0.0.1;
 /// Open Account Command Interface
 interface open-account-command {
     /// Command type specific to opening accounts
-    resource command;
+    record command {
+        /// Initial balance for the new account
+        initial-balance: u32,
+        /// Customer ID for the account
+        customer-id: string,
+        /// Optional account type
+        account-type: option<string>,
+    }
     
     /// Serialize the open-account command to its byte representation.
     serialize-command: func(command: command) -> result<list<u8>, string>;
@@ -15,7 +22,18 @@ interface open-account-command {
 /// Open Account State Interface
 interface open-account-state {
     /// State type specific to opening accounts
-    resource state;
+    record state {
+        /// Account ID
+        id: string,
+        /// Current balance
+        balance: s64,
+        /// Whether the account is open
+        is-open: bool,
+        /// Customer ID
+        customer-id: string,
+        /// Account type
+        account-type: option<string>,
+    }
     
     /// Get the initial state for a new aggregate with no events
     initial-state: func() -> state;
@@ -27,84 +45,23 @@ interface open-account-state {
     deserialize-state: func(state: list<u8>) -> result<state, string>;
 }
 
-/// Open Account Evolve Interface
-interface open-account-evolve {
-    use cosmonic:eventsourcing/bank-account.{event};
-    use open-account-state.{state};
-    
-    /// Errors that can occur when evolving open account state
-    variant evolve-error {
-        invalid-event,
-        inconsistent-state,
-        unknown-event-type,
-        state-corruption,
-    }
-    
-    /// Evolve the state by applying a single event.
-    evolve: func(state: state, event: event) -> result<state, evolve-error>;
-}
-
-/// Open Account Decide Interface
-interface open-account-decide {
-    use cosmonic:eventsourcing/bank-account.{event};
-    use open-account-command.{command};
-    use open-account-state.{state};
-    
-    /// Errors that can occur when deciding on open account commands
-    variant decide-error {
-        account-already-exists,
-        invalid-account-number(string),
-        invalid-initial-balance,
-        missing-customer-info,
-        regulatory-restriction(string),
-        minimum-balance-not-met(u64),
-    }
-    
-    /// Decide what events to produce based on current state and command
-    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
-}
-
-/// Open Account Command Handler
+/// Open Account Handler Interface
 interface open-account {
-    use cosmonic:eventsourcing/bank-account.{event};
+    use bank-account.{event};
     use open-account-command.{command};
     use open-account-state.{state};
-    use open-account-decide.{decide-error};
-    use open-account-evolve.{evolve-error};
     
-    /// Command handling option
-    record command-option {
-        expected-revision: option<u64>,
-    }
-    
-    /// Result of handling an open account command
-    record command-result {
-        next-expected-version: u64,
-        events: list<event>,
-        state: state,
-    }
-    
-    /// Errors that can occur when handling open account commands
-    variant handle-command-error {
-        decide(decide-error),
-        evolve(evolve-error),
-        wrong-expected-version,
-        unknown,
-    }
-    
-    /// Extract the stream ID from the open account command
-    stream-id: func(command: command) -> string;
+    /// Rehydrate or reconstruct this aggregate's state from a list of events.
+    rehydrate: func(events: list<event>) -> result<state, string>;
     
     /// Handle the open account command
-    handle-command: func(command: command, option: option<command-option>) -> result<command-result, handle-command-error>;
+    handle-open-account: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// World specifically for handling open account commands  
 world open-account-w {
-    import cosmonic:eventsourcing/bank-account;
+    import bank-account;
     export open-account-command;
     export open-account-state;
-    export open-account-evolve;
-    export open-account-decide;
     export open-account;
 }

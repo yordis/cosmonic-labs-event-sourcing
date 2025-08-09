@@ -19,4 +19,4 @@ interface bank-account {
     
     /// Deserialize, unmarshal, or decode a single event from its byte representation.
     deserialize-event: func(event: list<u8>) -> result<event, string>;
-}
+} 

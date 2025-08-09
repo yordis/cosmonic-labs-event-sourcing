@@ -3,7 +3,14 @@ package cosmonic:eventsourcing@0.0.1;
 /// Transaction Command Interface
 interface transaction-command {
     /// Command type specific to transactions
-    resource command;
+    record command {
+        /// Account ID to perform transaction on
+        account-id: string,
+        /// Transaction amount (positive for credit, negative for debit)
+        amount: s64,
+        /// Optional transaction description
+        description: option<string>,
+    }
     
     /// Serialize the transaction command to its byte representation.
     serialize-command: func(command: command) -> result<list<u8>, string>;
@@ -15,7 +22,18 @@ interface transaction-command {
 /// Transaction State Interface
 interface transaction-state {
     /// State type specific to transactions
-    resource state;
+    record state {
+        /// Account ID
+        id: string,
+        /// Current balance
+        balance: s64,
+        /// Whether the account is open
+        is-open: bool,
+        /// Customer ID
+        customer-id: string,
+        /// Account type
+        account-type: option<string>,
+    }
     
     /// Get the initial state for a new aggregate with no events
     initial-state: func() -> state;
@@ -27,84 +45,23 @@ interface transaction-state {
     deserialize-state: func(state: list<u8>) -> result<state, string>;
 }
 
-/// Transaction Evolve Interface
-interface transaction-evolve {
-    use cosmonic:eventsourcing/bank-account.{event};
-    use transaction-state.{state};
-    
-    /// Errors that can occur when evolving transaction state
-    variant evolve-error {
-        invalid-event,
-        inconsistent-state,
-        unknown-event-type,
-        state-corruption,
-    }
-    
-    /// Evolve the state by applying a single event.
-    evolve: func(state: state, event: event) -> result<state, evolve-error>;
-}
-
-/// Transaction Decide Interface
-interface transaction-decide {
-    use cosmonic:eventsourcing/bank-account.{event};
-    use transaction-command.{command};
-    use transaction-state.{state};
-    
-    /// Errors that can occur when deciding on transaction commands
-    variant decide-error {
-        insufficient-funds(string),
-        account-not-found,
-        account-closed,
-        invalid-amount,
-        negative-balance-not-allowed,
-        transaction-limit-exceeded(u64),
-    }
-    
-    /// Decide what events to produce based on current state and command
-    decide: func(state: state, command: command) -> result<list<event>, decide-error>;
-}
-
-/// Transaction Command Handler
+/// Transaction Handler Interface
 interface transaction {
-    use cosmonic:eventsourcing/bank-account.{event};
+    use bank-account.{event};
     use transaction-command.{command};
     use transaction-state.{state};
-    use transaction-decide.{decide-error};
-    use transaction-evolve.{evolve-error};
     
-    /// Command handling option
-    record command-option {
-        expected-revision: option<u64>,
-    }
-    
-    /// Result of handling a transaction command
-    record command-result {
-        next-expected-version: u64,
-        events: list<event>,
-        state: state,
-    }
-    
-    /// Errors that can occur when handling transaction commands
-    variant handle-command-error {
-        decide(decide-error),
-        evolve(evolve-error),
-        wrong-expected-version,
-        unknown,
-    }
-    
-    /// Extract the stream ID from the transaction command
-    stream-id: func(command: command) -> string;
+    /// Rehydrate or reconstruct this aggregate's state from a list of events.
+    rehydrate: func(events: list<event>) -> result<state, string>;
     
     /// Handle the transaction command
-    handle-command: func(command: command, option: option<command-option>) -> result<command-result, handle-command-error>;
+    handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// World specifically for handling transaction commands
 world transaction-w {
-    import cosmonic:eventsourcing/bank-account;
+    import bank-account;
     export transaction-command;
     export transaction-state;
-    export transaction-evolve;
-    export transaction-decide;
     export transaction;
-} 
+}
