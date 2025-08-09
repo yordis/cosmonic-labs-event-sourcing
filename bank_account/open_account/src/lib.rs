@@ -1,13 +1,13 @@
 /// Generated WIT bindings for open-account command
 mod bindings {
-    use super::TransactionAggregate;
+    use super::OpenAccountAggregate;
 
     wit_bindgen::generate!({
         path: "../../wit",
         world: "open-account-w",
     });
 
-    export!(TransactionAggregate);
+    export!(OpenAccountAggregate);
 }
 
 pub mod proto {
