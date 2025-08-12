@@ -51,8 +51,8 @@ interface open-account {
     use open-account-command.{command};
     use open-account-state.{state};
     
-    /// Rehydrate or reconstruct this aggregate's state from a list of events.
-    rehydrate: func(events: list<event>) -> result<state, string>;
+    /// Evolve the aggregate's state by applying an event.
+    evolve: func(state: state, event: event) -> result<state, string>;
     
     /// Handle the open account command
     handle-open-account: func(state: state, command: command) -> result<list<event>, string>;

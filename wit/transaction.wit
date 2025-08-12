@@ -51,8 +51,8 @@ interface transaction {
     use transaction-command.{command};
     use transaction-state.{state};
     
-    /// Rehydrate or reconstruct this aggregate's state from a list of events.
-    rehydrate: func(events: list<event>) -> result<state, string>;
+    /// Evolve the aggregate's state by applying an event.
+    evolve: func(state: state, event: event) -> result<state, string>;
     
     /// Handle the transaction command
     handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
