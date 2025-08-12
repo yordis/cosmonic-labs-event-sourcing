@@ -89,38 +89,31 @@ impl transaction_state::Guest for TransactionAggregate {
 
 // Implement transaction main interface
 impl transaction::Guest for TransactionAggregate {
-    fn rehydrate(events: Vec<bank_account::Event>) -> Result<transaction_state::State, String> {
-        let mut state = transaction_state::State {
-            id: String::new(),
-            balance: 0,
-            is_open: false,
-            customer_id: String::new(),
-            account_type: None,
-        };
-
-        for event in events {
-            let bank_event = BankEvent::decode(event.data.as_slice())
-                .map_err(|e| format!("Failed to decode event: {e}"))?;
-                
-            match bank_event.event.as_ref() {
-                Some(bank_event::Event::Opened(AccountOpened { balance, id })) => {
-                    state.balance = i64::from(*balance);
-                    state.id = id.to_owned();
-                    state.is_open = true;
-                }
-                Some(bank_event::Event::Transaction(Transaction { amount })) => {
-                    state.balance += amount;
-                }
-                Some(bank_event::Event::Denied(TransactionDenied { amount: _ })) => {
-                    // could add a denied log to the account, or something
-                }
-                None => {}
+    fn evolve(
+        mut state: transaction_state::State,
+        event: bank_account::Event,
+    ) -> Result<transaction_state::State, String> {
+        let bank_event = BankEvent::decode(event.data.as_slice())
+            .map_err(|e| format!("Failed to decode event: {e}"))?;
+            
+        match bank_event.event.as_ref() {
+            Some(bank_event::Event::Opened(AccountOpened { balance, id })) => {
+                state.balance = i64::from(*balance);
+                state.id = id.to_owned();
+                state.is_open = true;
             }
+            Some(bank_event::Event::Transaction(Transaction { amount })) => {
+                state.balance += amount;
+            }
+            Some(bank_event::Event::Denied(TransactionDenied { amount: _ })) => {
+                // could add a denied log to the account, or something
+            }
+            None => {}
         }
         Ok(state)
     }
 
-    fn handle_transaction(
+    fn handle_command(
         state: transaction_state::State,
         command: transaction_command::Command,
     ) -> Result<Vec<bank_account::Event>, String> {

@@ -1,0 +1,22 @@
+package cosmonic:eventsourcing@0.0.1;
+
+/// Bank account events and serialization functions
+interface bank-account {
+    /// Represents a state change that has occurred as a result of processing a command.
+    record event {
+        /// Event type identifier
+        event-type: string,
+        /// Serialized event data
+        data: list<u8>,
+        /// Event timestamp
+        timestamp: u64,
+        /// Event version for schema evolution
+        version: u32,
+    }
+    
+    /// Serialize, marshal, or encode a single event to its byte representation.
+    serialize-event: func(event: event) -> result<list<u8>, string>;
+    
+    /// Deserialize, unmarshal, or decode a single event from its byte representation.
+    deserialize-event: func(event: list<u8>) -> result<event, string>;
+}

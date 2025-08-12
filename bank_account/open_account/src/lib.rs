@@ -39,7 +39,7 @@ impl open_account_command::Guest for OpenAccountAggregate {
     }
 
     fn deserialize_command(command: Vec<u8>) -> Result<open_account_command::Command, String> {
-        let json_str = String::from_utf8(command)
+        let _json_str = String::from_utf8(command)
             .map_err(|e| format!("Invalid UTF-8 in command: {e}"))?;
         
         // Simple JSON parsing - in a real implementation you'd use a proper JSON parser
@@ -89,38 +89,31 @@ impl open_account_state::Guest for OpenAccountAggregate {
 
 // Implement open-account main interface
 impl open_account::Guest for OpenAccountAggregate {
-    fn rehydrate(events: Vec<bank_account::Event>) -> Result<open_account_state::State, String> {
-        let mut state = open_account_state::State {
-            id: String::new(),
-            balance: 0,
-            is_open: false,
-            customer_id: String::new(),
-            account_type: None,
-        };
-
-        for event in events {
-            let bank_event = BankEvent::decode(event.data.as_slice())
-                .map_err(|e| format!("Failed to decode event: {e}"))?;
-                
-            match bank_event.event.as_ref() {
-                Some(bank_event::Event::Opened(AccountOpened { balance, id })) => {
-                    state.balance = i64::from(*balance);
-                    state.id = id.to_owned();
-                    state.is_open = true;
-                }
-                Some(bank_event::Event::Transaction(Transaction { amount })) => {
-                    state.balance += amount;
-                }
-                Some(bank_event::Event::Denied(TransactionDenied { amount: _ })) => {
-                    // could add a denied log to the account, or something
-                }
-                None => {}
+    fn evolve(
+        mut state: open_account_state::State,
+        event: bank_account::Event,
+    ) -> Result<open_account_state::State, String> {
+        let bank_event = BankEvent::decode(event.data.as_slice())
+            .map_err(|e| format!("Failed to decode event: {e}"))?;
+            
+        match bank_event.event.as_ref() {
+            Some(bank_event::Event::Opened(AccountOpened { balance, id })) => {
+                state.balance = i64::from(*balance);
+                state.id = id.to_owned();
+                state.is_open = true;
             }
+            Some(bank_event::Event::Transaction(Transaction { amount })) => {
+                state.balance += amount;
+            }
+            Some(bank_event::Event::Denied(TransactionDenied { amount: _ })) => {
+                // could add a denied log to the account, or something
+            }
+            None => {}
         }
         Ok(state)
     }
 
-    fn handle_open_account(
+    fn handle_command(
         state: open_account_state::State,
         command: open_account_command::Command,
     ) -> Result<Vec<bank_account::Event>, String> {

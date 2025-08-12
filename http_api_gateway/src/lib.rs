@@ -27,7 +27,7 @@ impl Guest for EventSourcer {
             .blocking_read(4096)
             .expect("to read some bytes");
         let events = event_sourcer::handle_command("foobar", &bytes).expect("to handle");
-        let _res = event_sourcer::append("foobar", events);
+        let _res = event_sourcer::append("foobar", &events);
 
         let res = OutgoingResponse::new(Fields::new());
         let body = res.body().expect("to get outgoing body");
