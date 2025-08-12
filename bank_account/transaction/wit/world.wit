@@ -55,7 +55,7 @@ interface transaction {
     evolve: func(state: state, event: event) -> result<state, string>;
     
     /// Handle the transaction command
-    handle-transaction: func(state: state, command: command) -> result<list<event>, string>;
+    handle-command: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// World specifically for handling transaction commands

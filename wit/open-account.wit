@@ -55,7 +55,7 @@ interface open-account {
     evolve: func(state: state, event: event) -> result<state, string>;
     
     /// Handle the open account command
-    handle-open-account: func(state: state, command: command) -> result<list<event>, string>;
+    handle-command: func(state: state, command: command) -> result<list<event>, string>;
 }
 
 /// World specifically for handling open account commands  
