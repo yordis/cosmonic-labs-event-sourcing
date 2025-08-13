@@ -1,0 +1,67 @@
+package cosmonic:eventsourcing@0.0.1;
+
+/// Open Account Command Interface
+interface open-account-command {
+    /// Command type specific to opening accounts
+    record command {
+        /// Initial balance for the new account
+        initial-balance: u32,
+        /// Customer ID for the account
+        customer-id: string,
+        /// Optional account type
+        account-type: option<string>,
+    }
+    
+    /// Serialize the open-account command to its byte representation.
+    serialize-command: func(command: command) -> result<list<u8>, string>;
+    
+    /// Deserialize the open-account command from its byte representation.
+    deserialize-command: func(command: list<u8>) -> result<command, string>;
+}
+
+/// Open Account State Interface
+interface open-account-state {
+    /// State type specific to opening accounts
+    record state {
+        /// Account ID
+        id: string,
+        /// Current balance
+        balance: s64,
+        /// Whether the account is open
+        is-open: bool,
+        /// Customer ID
+        customer-id: string,
+        /// Account type
+        account-type: option<string>,
+    }
+    
+    /// Get the initial state for a new aggregate with no events
+    initial-state: func() -> state;
+    
+    /// Serialize the aggregate state to its byte representation.
+    serialize-state: func(state: state) -> result<list<u8>, string>;
+    
+    /// Deserialize the aggregate state from its byte representation.
+    deserialize-state: func(state: list<u8>) -> result<state, string>;
+}
+
+/// Open Account Handler Interface
+interface open-account {
+    use bank-account.{event};
+    use open-account-command.{command};
+    use open-account-state.{state};
+    
+    /// Evolve the aggregate's state by applying an event.
+    evolve: func(state: state, event: event) -> result<state, string>;
+    
+    /// Handle the open account command
+    handle-command: func(state: state, command: command) -> result<list<event>, string>;
+}
+
+/// World specifically for handling open account commands  
+world open-account-w {
+    import bank-account;
+    export open-account-command;
+    export open-account-state;
+    export open-account;
+}

@@ -1,8 +1,8 @@
 [workspace]
 members = [
     "http_api_gateway",
-    "bank_account/aggregate",
-    "eshop_aggregate",
+    "bank_account/open_account",
+    "bank_account/transaction",
     "event_sourcer",
     "filesystem_event_store",
 ]

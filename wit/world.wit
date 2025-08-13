@@ -1,43 +1,8 @@
 package cosmonic:eventsourcing@0.0.1;
 
-/// Business logic
-interface aggregate {
-    use types.{event, command, state};
-
-    /// Serialize, marshal, or encode a single event to its byte representation. This is the storage
-    /// format for the event. The same technique used to deserialize should be used to serialize.
-    serialize-event: func(event: event) -> result<list<u8>, string>;
-
-    /// Deserialize, unmarshal, or decode a single event from its byte representation. This is the storage
-    /// format for the event. The same technique used to deserialize should be used to serialize.
-    deserialize-event: func(event: list<u8>) -> result<event, string>;
-
-    /// Serialize, marshal, or encode a single command to its byte representation.
-    /// The same technique used to deserialize should be used to serialize.
-    serialize-command: func(command: command) -> result<list<u8>, string>;
-
-    /// Deserialize, unmarshal, or decode a single command from its byte representation.
-    /// The same technique used to deserialize should be used to serialize.
-    deserialize-command: func(event: list<u8>) -> result<command, string>;
-
-    /// Serialize, marshal, or encode the aggregate state to its byte representation.
-    /// The same technique used to deserialize should be used to serialize.
-    serialize-state: func(state: state) -> result<list<u8>, string>;
-
-    /// Deserialize, unmarshal, or decode the aggregate state from its byte representation.
-    /// The same technique used to deserialize should be used to serialize.
-    deserialize-state: func(state: list<u8>) -> result<state, string>;
-
-    /// Rehydrate or reconstruct this aggregate's state from a list of events, starting from the initial state.
-    rehydrate: func(events: list<event>) -> result<state, string>;
-
-    /// Using the given state, handle the command by returning applicable events.
-    handle: func(state: state, command: command) -> result<list<event>, string>;
-}
-
-/// Main handler component of the entire system
+/// Event sourcer interface for handling commands and events
 interface event-sourcer {
-    use types.{event, command};
+    use bank-account.{event};
 
     append: func(aggregate-id: string, events: list<event>) -> result<list<list<u8>>, string>;
     get-events: func(aggregate-id: string) -> result<list<event>, string>;
@@ -46,45 +11,32 @@ interface event-sourcer {
 
 /// Persistent storage layer
 interface event-store {
-    use types.{event};
+    use bank-account.{event};
 
-    // TODO: consider additional metadata
     append-event: func(aggregate-id: string, event: list<u8>) -> result<_, string>;
     get-events: func(aggregate-id: string) -> result<list<list<u8>>, string>;
 }
 
-/// Defines the core resources used in event sourcing patterns.
-/// 
-interface types {
-    /// Represents an action or intent to change state, typically issued by a client.
-    resource command;
-    /// Represents a state change that has occurred as a result of processing a command.
-    resource event;
-    /// Represents the current state of an entity, reconstructed from a sequence of events.
-    resource state;
-}
-
-/// Business logic component
+/// Business logic component world
 world aggregate-w {
-    export types;
-    export aggregate;
+    import bank-account;
+    export bank-account;
 }
 
+/// HTTP API Gateway world
 world http-api-gateway-w {
     import event-sourcer;
-
     export wasi:http/incoming-handler@0.2.0;
 }
 
-/// Implementation of the event sourced system, aka platform harness
+/// Event sourcer system world
 world event-sourcer-w {
-    import aggregate;
+    import bank-account;
     import event-store;
-
     export event-sourcer;
 }
 
-/// Implementation of the event sourced storage layer
+/// Event store world
 world event-store-w {
     export event-store;
 }

@@ -1,0 +1,21 @@
+[package]
+name = "bank-account-open-account"
+description = "Open account command handler for bank account aggregate"
+edition = "2021"
+version = "0.1.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = { workspace = true }
+wit-bindgen = { workspace = true }
+wasi = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+prost = "0.14.1"
+prost-types = "0.14.1"
+uuid = { version = "1.17.0", features = ["std", "v7"] }
+
+[build-dependencies]
+prost-build = "0.12"

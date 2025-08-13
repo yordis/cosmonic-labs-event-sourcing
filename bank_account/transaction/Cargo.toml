@@ -1,6 +1,6 @@
 [package]
-name = "bank-account-aggregate"
-description = "An example bank account aggregate with Cosmonic event sourcing"
+name = "bank-account-transaction"
+description = "Transaction command handler for bank account aggregate"
 edition = "2021"
 version = "0.1.0"
 
@@ -18,4 +18,4 @@ prost-types = "0.14.1"
 uuid = { version = "1.17.0", features = ["std", "v7"] }
 
 [build-dependencies]
-prost-build = "0.12"
+prost-build = "0.12" 

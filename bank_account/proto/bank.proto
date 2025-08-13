@@ -1,5 +1,5 @@
-// bank.proto
 syntax = "proto3";
+
 package banking;
 
 message AccountOpened {
@@ -38,4 +38,4 @@ message BankState {
 
 message EventList {
   repeated BankEvent events = 1;
-}
+} 
